@@ -1,0 +1,237 @@
+module acc-eos {
+  yang-version 1.1;
+  namespace "urn:ccsa:yang:acc-eos";
+  prefix acc-eos;
+
+  import acc-devm {
+    prefix acc-devm;
+  }
+
+  import acc-eth {
+    prefix acc-eth;
+  }
+
+  import acc-sdh {
+    prefix acc-sdh;
+  }
+
+  import acc-connection {
+    prefix acc-con;
+  }
+
+  import acc-otn {
+    prefix acc-otn;
+  }
+
+  import acc-enum {
+    prefix acc-enum;
+  }
+
+  import acc-protection-group {
+    prefix acc-pg;
+  }
+
+  revision 2019-02-13 {
+    description
+      "Initial revision.";
+    reference
+      "xxx";
+  }
+
+  augment "/acc-devm:ftps/acc-devm:ftp/acc-eth:eth-ftp-pac" {
+    when "acc-eth:mapping-type = 'EoS'";
+    container vcg-pac {
+      description
+        "Virtual concatenation group";
+      uses acc-sdh:vcg-pac;
+    }
+  }
+
+  rpc create-eos-connection {
+    input {
+      uses acc-con:create-connection;
+
+      leaf service-mapping-mode {
+        type acc-enum:adaptation-type;
+        description
+          "基于SDH FTP客户信号类型，STM-1/STM-4=GMP，STM-16/STM-64=CBR_BMP";
+      }
+
+      leaf uni-protection-type {
+        type acc-pg:protection-type;
+        description
+          "default lag";
+      }
+
+      leaf nni-protection-type {
+        type acc-pg:protection-type;
+      }
+
+      container eth-uni {
+        leaf uni-ptp-name {
+          type string;
+        }
+
+        leaf second-uni-ptp-name {
+          type string;
+          description
+            "可选，用于与客户设备之间建立LAG保护（非负载均衡，单端保护）";
+        }
+
+        container client-vlan-spec {
+          when "../../service-type = 'EVPL'";
+          description
+            "只适用于EVPL，指定C-VLAN，用于客户Vlan与运营商Vlan的匹配，无需携带accessAction。不携带该参数时表示端口匹配";
+          uses acc-con:vlan-spec;
+        }
+      }
+
+      container primary-nni {
+        description
+          "primary nni,必选";
+        uses acc-otn:nni;
+      }
+
+      container secondary-nni {
+        description
+          "业务带保护模式，可选";
+        uses acc-otn:nni;
+      }
+
+      container eos-pac {
+        leaf sdh-signal-type {
+          type acc-enum:signal-type;
+        }
+
+        leaf vc-type {
+          type acc-enum:sdh-switch-type;
+          mandatory true;
+        }
+
+        leaf-list mapping-path {
+          type string {
+            length "1..64";
+          }
+          min-elements 1;
+        }
+
+        leaf sdh-signal-type-protect {
+          type acc-enum:signal-type;
+        }
+
+        leaf-list mapping-path-protect {
+          type string {
+            length "1..64";
+          }
+        }
+
+        leaf lcas {
+          type boolean;
+          default "false";
+        }
+
+        leaf hold-off {
+          type uint32;
+          default "0";
+          description
+            "unit: ms";
+        }
+
+        leaf wtr {
+          type uint32;
+          default "300";
+          description
+            "unit: s";
+        }
+
+        leaf tsd {
+          type boolean;
+          default "false";
+        }
+      }
+    }
+
+    output {
+      container connection {
+        uses acc-con:connection;
+      }
+
+      container create-component {
+        leaf-list vc-connection-name {
+          type string;
+        }
+
+        leaf-list ftp-name {
+          type string {
+            length "1..64";
+          }
+        }
+
+        leaf-list ctp-name {
+          type string {
+            length "1..64";
+          }
+        }
+      }
+    }
+  }
+
+  rpc modify-vcg-connection-capacity {
+    input {
+      leaf eth-ftp-name {
+        type string {
+          length "1..64";
+        }
+        mandatory true;
+        description
+          "The name of eth ftp name.";
+      }
+
+      leaf sdh-ftp-name {
+        type string {
+          length "1..64";
+        }
+        mandatory true;
+        description
+          "The name of sdh ftp name.";
+      }
+
+      leaf sdh-protect-ftp-name {
+        type string {
+          length "1..64";
+        }
+        description
+          "The name of the protect sdh ftp name.";
+      }
+
+      leaf-list mapping-path {
+        type string {
+          length "1..64";
+        }
+        min-elements 1;
+        description
+          "The mapping path list.";
+      }
+
+      leaf-list mapping-path-protected {
+        type string {
+          length "1..64";
+        }
+        description
+          "The protected mapping path list.";
+      }
+    }
+
+    output {
+      leaf-list connection-name {
+        type string;
+      }
+
+      leaf-list ctp-name {
+        type string {
+          length "1..64";
+        }
+      }
+    }
+  }
+}

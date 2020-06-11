@@ -1,0 +1,283 @@
+module acc-protection-group {
+  yang-version 1.1;
+  namespace "urn:ccsa:yang:acc-protection-group";
+  prefix acc-pg;
+
+  typedef protection-type {
+    type enumeration {
+      enum "odu-sncp-i" {
+        value 0;
+      }
+      enum "odu-sncp-s" {
+        value 1;
+      }
+      enum "vc-sncp" {
+        value 2;
+      }
+      enum "och-1-plus-1" {
+        value 3;
+      }
+      enum "msp-1-plus-1" {
+        value 4;
+      }
+      enum "lag" {
+        value 5;
+      }
+      enum "no-protection" {
+        value 6;
+      }
+    }
+  }
+
+  typedef switch-type {
+    type enumeration {
+      enum "uni-switch" {
+        value 0;
+        description
+          "uni switch";
+      }
+      enum "bi-switch" {
+        value 1;
+        description
+          "bi switch";
+      }
+    }
+    description
+      "switch type";
+  }
+
+  typedef sd-trigger {
+    type enumeration {
+      enum "enabled" {
+        value 0;
+        description
+          "sd trigger enabled";
+      }
+      enum "disabled" {
+        value 1;
+        description
+          "sd trigger disabled";
+      }
+    }
+    description
+      "sd-trigger";
+  }
+
+  typedef protection-direction {
+    type enumeration {
+      enum "to-primary" {
+        value 0;
+        description
+          "to primary";
+      }
+      enum "to-secondary" {
+        value 1;
+        description
+          "to secondary";
+      }
+    }
+  }
+
+  typedef reversion-mode {
+    type enumeration {
+      enum "revertive" {
+        value 0;
+        description
+          "企标中的是 revertive";
+      }
+      enum "non-revertive" {
+        value 1;
+        description
+          "企标中的是 non-revertive";
+      }
+    }
+  }
+
+  typedef switch-reason {
+    type enumeration {
+      enum "no-switch" {
+        value 0;
+        description
+          "no switch";
+      }
+      enum "sf-switch" {
+        value 1;
+        description
+          "SF switch";
+      }
+      enum "sd-switch" {
+        value 2;
+        description
+          "SD switch";
+      }
+      enum "manual-switch" {
+        value 3;
+        description
+          "manual switch";
+      }
+      enum "force-switch" {
+        value 4;
+        description
+          "force switch";
+      }
+      enum "cleared" {
+        value 5;
+        description
+          "cleared";
+      }
+      enum "wait-for-restore" {
+        value 6;
+        description
+          "WTR";
+      }
+      enum "lockout" {
+        value 7;
+        description
+          "lockout of protection";
+      }
+    }
+  }
+
+  grouping pg {
+    description
+      "pg";
+    leaf pg-id {
+      type uint16;
+      mandatory true;
+    }
+
+    leaf protection-type {
+      type protection-type;
+      mandatory true;
+      description
+        "protection type";
+    }
+
+    leaf reversion-mode {
+      type reversion-mode;
+      mandatory true;
+      description
+        "reversion mode";
+    }
+
+    leaf tcm {
+      type uint16;
+    }
+
+    leaf switch-type {
+      type switch-type;
+      mandatory true;
+      description
+        "switch type";
+    }
+
+    leaf switch-reason {
+      type switch-reason;
+      config false;
+      description
+        "switch reason, default NO SWITCH";
+    }
+
+    leaf protection-direction {
+      type protection-direction;
+      config false;
+      description
+        "protection direction";
+    }
+
+    leaf hold-off {
+      type uint32;
+      units "ms";
+      default "0";
+      description
+        "hold off time";
+    }
+
+    leaf wait-to-restore-time {
+      type uint64;
+      units "seconds";
+      mandatory true;
+      description
+        "wait to restore time";
+    }
+
+    leaf sd-trigger {
+      type sd-trigger;
+      description
+        "sd protection";
+    }
+
+    leaf primary-port {
+      type string;
+      mandatory true;
+      description
+        "primary port CTP/FTP/PTP,不同业务对应不同的端口类型";
+    }
+
+    leaf secondary-port {
+      type string;
+      mandatory true;
+      description
+        "secondary port PTP/FTP/CTP,不同业务对应不同的端口类型";
+    }
+
+    leaf selected-port {
+      type string;
+      config false;
+      mandatory true;
+      description
+        "selected port PTP/FTP/CTP,不同业务对应不同的端口类型";
+    }
+  }
+
+  container pgs {
+    description
+      "pgs";
+    list pg {
+      key "pg-id";
+      description
+        "pg";
+      uses pg;
+    }
+  }
+
+  rpc perform-protection-command {
+    description
+      "protection";
+    input {
+      leaf pg-id {
+        type uint64;
+        mandatory true;
+        description
+          "pg id";
+      }
+
+      leaf protection-command {
+        type switch-reason;
+        mandatory true;
+        description
+          "protection command";
+      }
+
+      leaf protection-direction {
+        type protection-direction;
+        mandatory true;
+        description
+          "protection direction";
+      }
+    }
+  }
+
+  notification protection-switch-notification {
+    description
+      "protection switch notification";
+    leaf protection-switch-serial-no {
+      type uint64;
+      mandatory true;
+    }
+
+    container pg {
+      uses pg;
+    }
+  }
+}

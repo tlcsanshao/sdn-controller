@@ -1,0 +1,357 @@
+module acc-sdh {
+  yang-version 1.1;
+  namespace "urn:ccsa:yang:acc-sdh";
+  prefix acc-sdh;
+
+  import acc-devm {
+    prefix acc-devm;
+  }
+
+  import acc-connection {
+    prefix acc-con;
+  }
+
+  import acc-otn {
+    prefix acc-otn;
+  }
+
+  import acc-yang-types {
+    prefix acc-type;
+  }
+
+  import acc-enum {
+    prefix acc-enum;
+  }
+
+  import acc-protection-group {
+    prefix acc-pg;
+  }
+
+  identity SDH {
+    base acc-type:layer-protocol-name;
+  }
+
+  grouping vcg-pac {
+    leaf vc-type {
+      type acc-enum:sdh-switch-type;
+      mandatory true;
+    }
+
+    leaf lcas {
+      type boolean;
+      default "false";
+    }
+
+    leaf hold-off {
+      type uint32;
+      default "0";
+      description
+        "unit: ms";
+    }
+
+    leaf wtr {
+      type uint32;
+      default "300";
+      description
+        "unit: s";
+    }
+
+    leaf tsd {
+      type boolean;
+      default "false";
+    }
+
+    leaf tx-number {
+      type uint64;
+      default "0";
+      config false;
+      description
+        "The actual number of members sent by the LCAS group.";
+    }
+
+    leaf rx-number {
+      type uint64;
+      default "0";
+      config false;
+      description
+        "The actual number of members received by the LCAS group.";
+    }
+
+    leaf so-handshake-state {
+      type boolean;
+      default "false";
+      config false;
+      description
+        "The handshake state of the source end.";
+    }
+  }
+
+  grouping sdh-ftp {
+    leaf sdh-type {
+      type acc-enum:signal-type;
+    }
+
+    leaf vc-type {
+      type acc-enum:sdh-switch-type;
+    }
+
+    leaf mapping-path {
+      type string {
+        length "1..64";
+      }
+    }
+  }
+
+  augment "/acc-devm:ptps/acc-devm:ptp" {
+    container sdh-mapping-pac {
+      leaf-list supported-sdh-signal-types {
+        type acc-enum:signal-type;
+      }
+
+      leaf-list switch-capability {
+        type acc-enum:sdh-switch-type;
+      }
+    }
+  }
+
+  augment "/acc-devm:ptps/acc-devm:ptp" {
+    when "acc-devm:layer-protocol-name = 'acc-sdh:SDH'";
+    container sdh-ptp-pac {
+      leaf current-sdh-signal-type {
+        type acc-enum:signal-type;
+        mandatory true;
+      }
+
+      leaf-list supported-sdh-signal-types {
+        type acc-enum:signal-type;
+        config false;
+      }
+
+      leaf-list switch-capability {
+        type acc-enum:sdh-switch-type;
+        config false;
+        min-elements 1;
+      }
+
+      leaf j0-actual-tx {
+        type string {
+          length "1..64";
+        }
+      }
+
+      leaf j0-expected-rx {
+        type string {
+          length "1..64";
+        }
+      }
+
+      leaf j0-actual-rx {
+        type string {
+          length "1..64";
+        }
+        config false;
+      }
+    }
+  }
+
+  augment "/acc-devm:ftps/acc-devm:ftp" {
+    when "acc-devm:layer-protocol-name = 'acc-sdh:SDH'";
+    container sdh-ftp-pac {
+      leaf sdh-signal-type {
+        type acc-enum:signal-type;
+        mandatory true;
+      }
+
+      leaf-list switch-capability {
+        type acc-enum:sdh-switch-type;
+        config false;
+        min-elements 1;
+      }
+
+      leaf service-mapping-mode {
+        type acc-enum:adaptation-type;
+      }
+
+      leaf j0-actual-tx {
+        type string {
+          length "1..64";
+        }
+      }
+
+      leaf j0-expected-rx {
+        type string {
+          length "1..64";
+        }
+      }
+
+      leaf j0-actual-rx {
+        type string {
+          length "1..64";
+        }
+        config false;
+      }
+    }
+  }
+
+  augment "/acc-devm:ctps/acc-devm:ctp" {
+    when "acc-devm:layer-protocol-name = 'acc-sdh:SDH'";
+    container vc-ctp-pac {
+      leaf vc-type {
+        type acc-enum:sdh-switch-type;
+        mandatory true;
+      }
+
+      leaf mapping-path {
+        type string {
+          length "1..64";
+        }
+        mandatory true;
+      }
+
+      leaf j1-actual-tx {
+        type string {
+          length "1..64";
+        }
+      }
+
+      leaf j1-expected-rx {
+        type string {
+          length "1..64";
+        }
+      }
+
+      leaf j1-actual-rx {
+        type string {
+          length "1..64";
+        }
+        config false;
+      }
+    }
+  }
+
+  rpc create-sdh-connection {
+    input {
+      uses acc-con:create-connection;
+
+      leaf service-mapping-mode {
+        type acc-enum:adaptation-type;
+      }
+
+      leaf uni-protection-type {
+        type acc-pg:protection-type;
+        description
+          "default msp-1-plus-1";
+      }
+
+      leaf nni-protection-type {
+        type acc-pg:protection-type;
+      }
+
+      leaf nni2-protection-type {
+        type acc-pg:protection-type;
+      }
+
+      container sdh-uni {
+        description
+          "only for UNI-NNI ";
+        leaf uni-ptp-name {
+          type string {
+            length "1..64";
+          }
+        }
+
+        leaf vc-type {
+          type acc-enum:sdh-switch-type;
+        }
+
+        leaf mapping-path {
+          type string {
+            length "1..64";
+          }
+        }
+      }
+
+      container second-sdh-uni {
+        description
+          "only for UNI-NNI ";
+        leaf uni-ptp-name {
+          type string {
+            length "1..64";
+          }
+        }
+
+        leaf vc-type {
+          type acc-enum:sdh-switch-type;
+        }
+
+        leaf mapping-path {
+          type string {
+            length "1..64";
+          }
+        }
+      }
+
+      container primary-nni {
+        description
+          "primary nni, mandatory true";
+        uses acc-otn:nni;
+
+        container sdh-ftp {
+          uses sdh-ftp;
+        }
+      }
+
+      container secondary-nni {
+        description
+          "only for service with protection. Optional";
+        uses acc-otn:nni;
+
+        container sdh-ftp {
+          uses sdh-ftp;
+        }
+      }
+
+      container primary-nni2 {
+        description
+          "only NNI2NNI mode, optional!";
+        uses acc-otn:nni;
+
+        container sdh-ftp {
+          uses sdh-ftp;
+        }
+      }
+
+      container secondary-nni2 {
+        description
+          "only NNI2NNI mode and with protection. optional";
+        uses acc-otn:nni;
+
+        container sdh-ftp {
+          uses sdh-ftp;
+        }
+      }
+    }
+
+    output {
+      container connection {
+        uses acc-con:connection;
+      }
+
+      container create-component {
+        leaf-list ftp-name {
+          type string {
+            length "1..64";
+          }
+          min-elements 1;
+        }
+
+        leaf-list ctp-name {
+          type string {
+            length "1..64";
+          }
+          min-elements 1;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,535 @@
+module acc-eth {
+  yang-version 1.1;
+  namespace "urn:ccsa:yang:acc-eth";
+  prefix acc-eth;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+
+  import acc-yang-types {
+    prefix acc-type;
+  }
+
+  import acc-devm {
+    prefix acc-devm;
+  }
+
+  import acc-connection {
+    prefix acc-con;
+  }
+
+  import acc-otn {
+    prefix acc-otn;
+  }
+
+  import acc-enum {
+    prefix acc-enum;
+  }
+
+  import acc-protection-group {
+    prefix acc-pg;
+  }
+
+  revision 2020-02-09 {
+    description
+      "remove useless grouping eth-nni";
+  }
+
+  identity ETH {
+    base acc-type:layer-protocol-name;
+  }
+
+  typedef oam-transmit-interval {
+    type enumeration {
+      enum "interval-3ms33" {
+        value 1;
+        description
+          "3.33ms";
+      }
+      enum "interval-10ms" {
+        value 2;
+        description
+          "10ms";
+      }
+      enum "interval-100ms" {
+        value 3;
+        description
+          "100ms";
+      }
+      enum "interval-1s" {
+        value 4;
+        description
+          "1s";
+      }
+      enum "interval-10s" {
+        value 5;
+        description
+          "10s";
+      }
+      enum "interval-1min" {
+        value 6;
+        description
+          "1min";
+      }
+    }
+    description
+      "oam transmit interval";
+  }
+
+  typedef port-type {
+    type enumeration {
+      enum "electrical" {
+        value 0;
+      }
+      enum "optical" {
+        value 1;
+      }
+    }
+    description
+      "none";
+  }
+
+  typedef working-mode {
+    type enumeration {
+      enum "auto" {
+        value 0;
+      }
+      enum "100MFullDuplex" {
+        value 1;
+      }
+      enum "1000MFullDuplex" {
+        value 2;
+      }
+      enum "10GEFullDuplex" {
+        value 3;
+      }
+    }
+  }
+
+  typedef eth-mapping-type {
+    type enumeration {
+      enum "EoO" {
+        value 0;
+        description
+          "Ethernet over OTN.";
+      }
+      enum "EoS" {
+        value 1;
+        description
+          "Ethernet over SDH.";
+      }
+    }
+  }
+
+  grouping eth-ftp-pac {
+    leaf supported-mtu {
+      type uint64;
+      config false;
+      mandatory true;
+    }
+
+    leaf current-mtu {
+      type uint64;
+      mandatory true;
+    }
+
+    leaf service-mapping-mode {
+      type acc-enum:adaptation-type;
+      mandatory true;
+    }
+
+    leaf mapping-type {
+      type eth-mapping-type;
+      mandatory true;
+    }
+  }
+
+  augment "/acc-devm:ptps/acc-devm:ptp" {
+    container eth-mapping-pac {
+      leaf-list supported-mapping-type {
+        type eth-mapping-type;
+        config false;
+        description
+          "EoO,EoS  1..*";
+      }
+
+      leaf-list supported-odu-server-switch-capability {
+        type acc-enum:odu-switch-type;
+        config false;
+        description
+          "ODU能力上报，支持什么就上报什么";
+      }
+
+      leaf-list supported-sdh-server-switch-capability {
+        type acc-enum:sdh-switch-type;
+        config false;
+        description
+          "SDH能力上报，支持什么就上报什么";
+      }
+    }
+  }
+
+  augment "/acc-devm:ptps/acc-devm:ptp" {
+    when "acc-devm:layer-protocol-name = 'acc-eth:ETH'";
+    container eth-ptp-pac {
+      leaf-list supported-working-mode {
+        type working-mode;
+        config false;
+      }
+
+      leaf current-working-mode {
+        type working-mode;
+        mandatory true;
+      }
+
+      leaf supported-mtu {
+        type uint64;
+        config false;
+        mandatory true;
+      }
+
+      leaf current-mtu {
+        type uint64;
+        mandatory true;
+      }
+
+      leaf pause-control {
+        type boolean;
+        mandatory true;
+      }
+
+      leaf mac-address {
+        type yang:mac-address;
+      }
+
+      leaf port-type {
+        type port-type;
+        config false;
+        mandatory true;
+      }
+
+      leaf lldp-enable {
+        type boolean;
+      }
+
+      leaf lldp-peer-chassis-id {
+        type string {
+          length "1..255";
+        }
+        config false;
+      }
+
+      leaf lldp-peer-port-id {
+        type string {
+          length "1..255";
+        }
+        config false;
+        description
+          "hex ascii number without 0x，not normal string";
+      }
+
+      leaf lldp-peer-system-name {
+        type string {
+          length "1..64";
+        }
+        config false;
+      }
+    }
+  }
+
+  augment "/acc-devm:ftps/acc-devm:ftp" {
+    when "acc-devm:layer-protocol-name = 'acc-eth:ETH'";
+    container eth-ftp-pac {
+      uses eth-ftp-pac;
+    }
+  }
+
+  augment "/acc-devm:ctps/acc-devm:ctp" {
+    when "acc-devm:layer-protocol-name = 'acc-eth:ETH'";
+    container eth-ctp-pac {
+      container vlan-spec {
+        description
+          "vlan spec";
+        uses acc-con:vlan-spec;
+      }
+
+      container client-vlan-spec {
+        description
+          "client vlan spec";
+        uses acc-con:vlan-spec;
+      }
+
+      container performance {
+        config false;
+        leaf delay {
+          type uint64;
+          mandatory true;
+          description
+            "delay";
+        }
+
+        leaf near-packet-loss-rate {
+          type acc-type:real;
+          mandatory true;
+          description
+            "near packet loss rate";
+        }
+
+        leaf far-packet-loss-rate {
+          type acc-type:real;
+          mandatory true;
+          description
+            "far packet loss rate";
+        }
+
+        leaf tx-bytes {
+          type uint64;
+          mandatory true;
+          description
+            "tx bytes";
+        }
+
+        leaf rx-bytes {
+          type uint64;
+          mandatory true;
+          description
+            "rx bytes";
+        }
+      }
+
+      container oam-state-pac {
+        description
+          "802.1ag test state";
+        leaf dm-state {
+          type boolean;
+          mandatory true;
+          description
+            "dm state";
+        }
+
+        leaf tm-state {
+          type boolean;
+          mandatory true;
+          description
+            "tm state";
+        }
+
+        leaf lm-state {
+          type boolean;
+          mandatory true;
+          description
+            "lm state";
+        }
+
+        leaf cc-state {
+          type boolean;
+          mandatory true;
+          description
+            "cc state";
+        }
+      }
+
+      container oam-config {
+        description
+          "ethernet oam parameters: mep id, meg id, mel, cc interval, etc";
+        leaf mep-id {
+          type uint16 {
+            range "1..8191";
+          }
+          mandatory true;
+        }
+
+        leaf remote-mep-id {
+          type uint16 {
+            range "1..8191";
+          }
+          mandatory true;
+        }
+
+        leaf meg-id {
+          type string;
+          mandatory true;
+        }
+
+        leaf md-name {
+          type string {
+            length "1..43";
+          }
+          mandatory true;
+        }
+
+        leaf mel {
+          type uint8 {
+            range "0..7";
+          }
+          mandatory true;
+        }
+
+        leaf cc-interval {
+          type oam-transmit-interval;
+          mandatory true;
+          description
+            "cv transmit period :3.33ms/10ms/100ms/1s/10s/1min";
+        }
+
+        leaf lm-interval {
+          type oam-transmit-interval;
+          mandatory true;
+          description
+            "lm transmit period :1s/10s/1min";
+        }
+
+        leaf dm-interval {
+          type oam-transmit-interval;
+          mandatory true;
+          description
+            "dm transmit period :1s/10s/1min";
+        }
+      }
+    }
+  }
+
+  rpc create-eth-connection {
+    input {
+      uses acc-con:create-connection;
+
+      leaf service-mapping-mode {
+        type acc-enum:adaptation-type;
+      }
+
+      leaf uni-protection-type {
+        type acc-pg:protection-type;
+        description
+          "default lag";
+      }
+
+      leaf nni-protection-type {
+        type acc-pg:protection-type;
+      }
+
+      leaf nni2-protection-type {
+        type acc-pg:protection-type;
+      }
+
+      container eth-uni {
+        leaf uni-ptp-name {
+          type string;
+        }
+
+        leaf second-uni-ptp-name {
+          type string;
+        }
+
+        container client-vlan-spec {
+          when "../../service-type = 'EVPL'";
+          description
+            "只适用于EVPL，指定C-VLAN，用于客户Vlan与运营商Vlan的匹配，无需携带accessAction。不携带该参数时表示端口匹配";
+          uses acc-con:vlan-spec;
+        }
+      }
+
+      container primary-nni {
+        description
+          "primary nni,必选";
+        uses acc-otn:nni;
+
+        container ftp-vlan-spec {
+          description
+            "EVPL必须下发，对于其它业务可选。对于UNI-NNI业务， accessAction=PUSH_POP， 对于NNI-NNI则 pushpop or exchange";
+          uses acc-con:vlan-spec;
+        }
+      }
+
+      container secondary-nni {
+        description
+          "ETH带保护模式，可选";
+        uses acc-otn:nni;
+
+        container ftp-vlan-spec {
+          description
+            "EVPL必须下发，对于其它业务可选,对于UNI-NNI业务， accessAction=PUSH_POP";
+          uses acc-con:vlan-spec;
+        }
+      }
+
+      container primary-nni2 {
+        description
+          "NNI-NNI不带保护，可选";
+        uses acc-otn:nni;
+
+        container ftp-vlan-spec {
+          description
+            "EVPL必须下发，对于其它业务可选。对于NNI-NNI业务，accessAction=KEEP或EXCHANGE";
+          uses acc-con:vlan-spec;
+        }
+      }
+
+      container secondary-nni2 {
+        description
+          "NNI-NNI带保护，可选";
+        uses acc-otn:nni;
+
+        container ftp-vlan-spec {
+          description
+            "EVPL必须下发，对于其它业务可选,对于NNI-NNI业务，accessAction=KEEP或EXCHANGE";
+          uses acc-con:vlan-spec;
+        }
+      }
+    }
+
+    output {
+      container connection {
+        uses acc-con:connection;
+      }
+
+      container create-component {
+        leaf-list ftp-name {
+          type string {
+            length "1..64";
+          }
+        }
+
+        leaf-list ctp-name {
+          type string {
+            length "1..64";
+          }
+        }
+      }
+    }
+  }
+
+  notification lldp-change-notification {
+    description
+      "LLDP change notification";
+    leaf ptp-name {
+      type string {
+        length "1..64";
+      }
+      mandatory true;
+      description
+        "PTP name.";
+    }
+
+    leaf lldp-peer-chassis-id {
+      type string {
+        length "1..64";
+      }
+      mandatory true;
+    }
+
+    leaf lldp-peer-port-id {
+      type string {
+        length "1..64";
+      }
+      mandatory true;
+    }
+
+    leaf lldp-peer-system-name {
+      type string {
+        length "1..64";
+      }
+      mandatory true;
+    }
+  }
+}
